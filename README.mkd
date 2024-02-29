@@ -9,11 +9,20 @@
 **Test of a Bluesky MUD for Funsies**
 
 ## Extra packages installed:
-* axon-olc
-* bugreport
-* debug
-* lootable-npcs
-* simple-waypoints
+* [axon-olc](https://github.com/nelsonsbrian/axon-olc) (the big important one)
+* [bugreport](https://github.com/RanvierMUD/bundle-example-bugreport)
+* [debug](https://github.com/RanvierMUD/bundle-example-debug)
+* [lootable-npcs](https://github.com/RanvierMUD/lootable-npcs)
+* [simple-waypoints](https://github.com/RanvierMUD/simple-waypoints)
+
+## NOT installed, pending:
+* [yaml datasources](https://github.com/RanvierMUD/datasource-file)
+* [dialogflow for npcs](https://github.com/RanvierMUD/dialogflow-npcs)
+* [TTRPG concept](https://github.com/RanvierMUD/trpg-skeleton)
+
+** [see also](https://ranvier-ts.github.io/awesome-ranvier/) ** (Awesome Ranvier)
+
+### [web client NOT WORKING (/neuro)](https://github.com/RanvierMUD/neuro)
 
 # ranvier docs:
 
