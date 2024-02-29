@@ -16,9 +16,24 @@
 * [simple-waypoints](https://github.com/RanvierMUD/simple-waypoints)
 
 ## NOT installed, pending:
-* [yaml datasources](https://github.com/RanvierMUD/datasource-file)
+* [yaml datasources](https://github.com/RanvierMUD/datasource-file) (or mongo, sqlite, couchdb)
 * [dialogflow for npcs](https://github.com/RanvierMUD/dialogflow-npcs)
 * [TTRPG concept](https://github.com/RanvierMUD/trpg-skeleton)
+* [myelin quests](https://github.com/seanohue/myelin-quests)
+* [axolemma procedural generator](https://github.com/seanohue/axolemma)
+* [webhooks](https://github.com/azigler/ranvier-webhooks)
+* [zpanel](https://github.com/azigler/ranvier-zpanel)
+* [fantasy time](https://github.com/seanohue/fantasy-time-crunch)
+* [multiple choice events](https://github.com/seanohue/lobus)
+* [magic symbols](https://github.com/Sakeran/magic-symbols)
+* [gossip](https://github.com/oestrich/gossip-ranvier)
+* [diku bundle - vampire wars](https://github.com/palmermarc/ranvier-bundle-diku)]
+* [bundle - cave](https://github.com/tgreaves/ranviermud-cave)
+* [complex crafting](https://github.com/seanohue/complex-crafting)
+* [myelin questgoals](https://github.com/seanohue/myelin-quests)
+* [bundle - soulshard](https://github.com/jludwikowski/ranviermud-bundle-souldshard-areas)
+* [menu system](https://github.com/Zachac/menu-x)
+* [bundle - shadows of atlanta](https://github.com/lukeawyatt/shadows-of-atlanta)
 
 ** [see also](https://ranvier-ts.github.io/awesome-ranvier/) ** (Awesome Ranvier)
 
