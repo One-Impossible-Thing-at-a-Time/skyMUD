@@ -1,18 +1,29 @@
-'use strict';
+"use strict";
 
-const { Broadcast: B, CommandType, Logger, PlayerRoles, Room } = require('ranvier');
-const { NoPartyError, NoRecipientError, NoMessageError } = require('ranvier').Channel;
-const { CommandParser, InvalidCommandError, RestrictedCommandError } = require('../../bundle-example-lib/lib/CommandParser');
+const {
+  Broadcast: B,
+  CommandType,
+  Logger,
+  PlayerRoles,
+  Room,
+} = require("ranvier");
+const { NoPartyError, NoRecipientError, NoMessageError } =
+  require("ranvier").Channel;
+const {
+  CommandParser,
+  InvalidCommandError,
+  RestrictedCommandError,
+} = require("../../bundle-example-lib/lib/CommandParser");
 
 /**
  * Main command loop. All player input after login goes through here.
  * If you want to swap out the command parser this is the place to do it
  */
 module.exports = {
-  event: state => player => {
-    player.socket.once('data', data => {
-      function loop () {
-        player.socket.emit('commands', player);
+  event: (state) => (player) => {
+    player.socket.once("data", (data) => {
+      function loop() {
+        player.socket.emit("commands", player);
       }
       data = data.toString().trim();
 
@@ -27,7 +38,12 @@ module.exports = {
         if (player._commandState) {
           const { state: commandState, command } = player._commandState;
           // note this calls command.func(), not command.execute()
-          const newState = command.func(data, player, command.name, commandState);
+          const newState = command.func(
+            data,
+            player,
+            command.name,
+            commandState
+          );
           if (newState) {
             player._commandState.state = newState;
           } else {
@@ -45,7 +61,7 @@ module.exports = {
         }
         switch (result.type) {
           case CommandType.MOVEMENT: {
-            player.emit('move', result);
+            player.emit("move", result);
             break;
           }
 
@@ -55,7 +71,11 @@ module.exports = {
               throw new RestrictedCommandError();
             }
             // commands have no lag and are not queued, just immediately execute them
-            const state = result.command.execute(result.args, player, result.originalCommand);
+            const state = result.command.execute(
+              result.args,
+              player,
+              result.originalCommand
+            );
             if (state) {
               player._commandState = {
                 command: result.command,
@@ -73,7 +93,10 @@ module.exports = {
 
           case CommandType.CHANNEL: {
             const { channel } = result;
-            if (channel.minRequiredRole !== null && channel.minRequiredRole > player.role) {
+            if (
+              channel.minRequiredRole !== null &&
+              channel.minRequiredRole > player.role
+            ) {
               throw new RestrictedCommandError();
             }
             // same with channels
@@ -89,7 +112,7 @@ module.exports = {
                   break;
                 case error instanceof NoMessageError:
                   B.sayAt(player, `\r\nChannel: ${channel.name}`);
-                  B.sayAt(player, 'Syntax: ' + channel.getUsage());
+                  B.sayAt(player, "Syntax: " + channel.getUsage());
                   if (channel.description) {
                     B.sayAt(player, channel.description);
                   }
@@ -102,26 +125,34 @@ module.exports = {
           case CommandType.SKILL: {
             // See bundles/ranvier-player-events/player-events.js commandQueued and updateTick for when these
             // actually get executed
-            player.queueCommand({
-              execute: _ => {
-                player.emit('useAbility', result.skill, result.args);
+            player.queueCommand(
+              {
+                execute: (_) => {
+                  player.emit("useAbility", result.skill, result.args);
+                },
+                label: data,
               },
-              label: data,
-            }, result.skill.lag || state.Config.get('skillLag') || 1000);
+              result.skill.lag || state.Config.get("skillLag") || 1000
+            );
             break;
           }
         }
       } catch (error) {
-        switch(true) {
+        switch (true) {
           case error instanceof InvalidCommandError:
             if (player.room && player.room instanceof Room) {
-                // check to see if room has a matching context-specific command
-                const roomCommands = player.room.getMeta('commands');
-                const [commandName, ...args] = data.split(' ');
-                if (roomCommands && roomCommands.includes(commandName)) {
-                  player.room.emit('command', player, commandName, args.join(' '));
-                  break;
-                }
+              // check to see if room has a matching context-specific command
+              const roomCommands = player.room.getMeta("commands");
+              const [commandName, ...args] = data.split(" ");
+              if (roomCommands && roomCommands.includes(commandName)) {
+                player.room.emit(
+                  "command",
+                  player,
+                  commandName,
+                  args.join(" ")
+                );
+                break;
+              }
             }
 
             B.sayAt(player, "Huh?");
@@ -138,5 +169,14 @@ module.exports = {
       B.prompt(player);
       loop();
     });
-  }
+  },
 };
+
+function loop() {
+  // OLC command bypass
+  if (player.otherInput) {
+    player.otherInput = false;
+    return;
+  } // end bypass
+  player.socket.emit("commands", player);
+}
