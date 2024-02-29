@@ -1,0 +1,131 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-repeat.html">
+<link rel="import" href="../../bower_components/polymer/lib/elements/dom-if.html">
+
+<link rel="import" href="neuro-window.html">
+<link rel="import" href="neuro-statbar.html">
+<link rel="import" href="draggable-behavior.html">
+
+<dom-module id="effect-display">
+  <template>
+    <style>
+      :host {
+        cursor: pointer;
+        display: block;
+        width: 192px;
+        user-select: none;
+        overflow: hidden;
+      }
+      .effect {
+        border: 1px solid #e0e0e0;
+        border-left-width: 0;
+        padding: 4px 12px;
+        background-color: #333;
+        transform: skew(-20deg);
+        position: relative;
+        left: -10px;
+      }
+      .effect + .effect {
+        top: -1px;
+      }
+      .effect__name {
+        font-size: 16px;
+        color: #fff;
+        margin-bottom: 4px;
+        padding-left: 4px;
+      }
+      .effect__duration {
+        --statbar-current-bg1: #9e9e9e;
+        --statbar-current-bg2: #bdbdbd;
+        --statbar-current-bg3: #78909c;
+        width: 156px;
+        margin-left: 12px;
+        height: 16px;
+      }
+      .effect__duration[hidden] {
+        display: none !important;
+      }
+      .effect__permanent {
+        text-align: right;
+        font-style: italic;
+        font-size: 12px;
+        color: #eee;
+      }
+      .effect__name, .effect__duration, .effect__permanent {
+        transform: skew(20deg);
+      }
+    </style>
+    <neuro-window>
+      <span slot="title">Effects</span>
+
+      <template is="dom-if" if="[[!_hasEffects]]" restamp>
+        <div class="effect">
+          <div class="effect__name">No active effects</div>
+        </div>
+      </template>
+      <template is="dom-repeat" items="[[effects]]" as="effect">
+        <div class="effect" title$="[[effect.config.description]]" on-click="_showEffects">
+          <div class="effect__name">[[effect.config.name]]</div>
+          <neuro-statbar
+            class="effect__duration"
+            hide-label
+            hidden$="[[_isPermanent(effect.config.duration)]]"
+            current-value="[[effect.remaining]]"
+            max-value="[[effect.config.duration]]"
+          ></neuro-statbar>
+          <div class="effect__permanent" hidden$="[[!_isPermanent(effect.config.duration)]]">
+            Permanent
+          </div>
+        </div>
+      </template>
+    </neuro-window>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class EffectDisplay extends Neuro.DraggableBehavior(Polymer.Element) {
+      static get is() { return 'effect-display'; }
+      static get properties() {
+        return {
+          effects: {
+            type: Array,
+            value: function () {
+              return [];
+            },
+          },
+
+          _hasEffects: {
+            type: Boolean,
+            computed: '_computeHasEffects(effects.*)',
+          },
+
+          toggled: {
+            type: Boolean,
+            reflectToAttribute: true,
+            value: false,
+          },
+        };
+      }
+
+      _isPermanent(duration) {
+        return duration === 'inf';
+      }
+
+      _computeHasEffects() {
+        if (!this.effects) {
+          return false;
+        }
+        return this.effects.length > 0;
+      }
+
+      _showEffects() {
+        this.dispatchEvent(new CustomEvent('show-effects'));
+      }
+    }
+
+    window.customElements.define(EffectDisplay.is, EffectDisplay);
+  </script>
+</dom-module>

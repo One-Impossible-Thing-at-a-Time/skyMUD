@@ -1,0 +1,100 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/utils/debounce.html">
+
+<dom-module id="neuro-statbar">
+  <template>
+    <style>
+      :host {
+        background-color: transparent;
+        display: flex;
+        height: 32px;
+        overflow: hidden;
+        width: 384px;
+        border-left: 2px solid #111;
+      }
+      #container {
+        position: relative;
+        height: 100%;
+        width: 100%;
+        transform: skew(-20deg);
+        left: -8px;
+        padding: 2px;
+        background-color: #222;
+        box-shadow: inset 0 5px 15px rgba(0, 0, 0, 0.6);
+      }
+      #currentBar {
+        overflow: hidden;
+        height: calc(100% - 4px);
+        transition: all 200ms ease;
+        background: linear-gradient(90deg, var(--statbar-current-bg1, #a00), var(--statbar-current-bg2, #900) 20%, var(--statbar-current-bg3, #A20) 90%);
+        box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.15), 2px 0 4px #111;
+        @apply --statbar-current;
+      }
+      #label {
+        align-items: center;
+        color: #fff;
+        display: flex;
+        flex-direction: row;
+        font-weight: bold;
+        height: calc(100% - 8px);
+        justify-content: center;
+        position: absolute;
+        width: 100%;
+        text-shadow: -1px 0px 1px #000, 0px -1px 1px #000, 1px 0px 1px #000, 0px 1px 1px #000;
+        transform: skew(20deg);
+        @apply --statbar-label;
+      }
+      :host([hide-label]) #label {
+        display: none;
+      }
+
+      #valueDivider {
+        margin: 0 8px;
+        @apply --statbar-divider;
+      }
+    </style>
+    <div id="container">
+      <div id="label">[[currentValue]] <span id="valueDivider">/</span> [[maxValue]]</div>
+      <div id="currentBar"></div>
+    </div>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class NeuroStatbar extends Polymer.Element {
+      static get is() { return 'neuro-statbar'; }
+      static get properties() {
+        return {
+          currentValue: {
+            type: Number,
+            value: 0,
+            observer: '_updateCurrentValue',
+          },
+
+          maxValue: {
+            type: Number,
+            value: 0
+          },
+
+          hideLabel: {
+            type: Boolean,
+            value: false,
+            reflectToAttribute: true,
+          },
+        };
+      }
+
+      _updateCurrentValue() {
+        requestAnimationFrame(() => {
+          const percent = ((this.currentValue / this.maxValue) * 100) + '%';
+          this.$.currentBar.style.width = percent;
+        })
+      }
+    }
+
+    window.customElements.define(NeuroStatbar.is, NeuroStatbar);
+  </script>
+</dom-module>

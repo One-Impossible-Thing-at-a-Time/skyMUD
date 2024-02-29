@@ -1,0 +1,398 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer/lib/mixins/gesture-event-listeners.html">
+
+<link rel="import" href="shared-styles.html">
+<link rel="import" href="player-display.html">
+<link rel="import" href="target-display.html">
+<link rel="import" href="effect-display.html">
+<link rel="import" href="quest-display.html">
+<link rel="import" href="options-menu.html">
+<link rel="import" href="neuro-toolbar.html">
+<link rel="import" href="system-menu.html">
+<link rel="import" href="neuro-theme.html">
+
+<dom-module id="neuro-app">
+  <template>
+    <style include="neuro-theme"></style>
+    <style include="shared-styles">
+      :host {
+        display: block;
+        background-color: #000;
+        height: 100vh;
+        width: 100vw;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      #toolbar {
+        position: fixed;
+      }
+      #output {
+        flex: 1;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+        white-space: pre-wrap;
+        background-color: #000;
+        color: #e0e0e0;
+        padding: 8px;
+        overflow-y: auto;
+        margin-top: 48px;
+      }
+      #output[connected] {
+        margin-top: 0;
+      }
+      .output-message.error {
+        display: block;
+        border: 1px solid #f33;
+        background-color: #faa;
+        padding: 8px;
+        color: #fff;
+      }
+      .output-message.info {
+        display: block;
+        border: 1px solid #33f;
+        background-color: #aaf;
+        color: #fff;
+        padding: 8px;
+      }
+      .output-message a {
+        color: var(--ranvier-green);
+      }
+      #input {
+        display: block;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 16px;
+        height: 32px;
+      }
+      #targets {
+        position: absolute;
+        top: 48px;
+        width: 100%;
+        pointer-events: none;
+      }
+      #effects {
+        position: absolute;
+        top: 64px;
+        right: 24px;
+        max-height: 256px;
+      }
+      #effects[hidden] {
+        display: none !important;
+      }
+      #quests {
+        position: absolute;
+        top: 280px;
+        right: 24px;
+        max-height: 256px;
+      }
+      #quests[hidden] {
+        display: none !important;
+      }
+      #optionsMenu {
+        position: absolute;
+        height: 200px;
+        width: 384px;
+        top: calc(50% - 100px);
+        left: calc(50% - 150px);
+      }
+      #optionsMenu[hidden] {
+        display: none !important;
+      }
+      .bottom-toolbar {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+      }
+      .player-display {
+        flex: 1;
+      }
+    </style>
+
+    <neuro-toolbar
+      id="toolbar"
+      connected="[[_isConnected]]"
+      on-connect="connect"
+      on-disconnect="disconnect"
+      on-show-settings="_openOptions"
+      hostname="{{hostname}}"
+      port="{{port}}"
+    ></neuro-toolbar>
+
+    <div id="output" connected$="[[_isConnected]]"></div>
+
+    <input id="input" type="text" value="{{input::input}}" on-keydown="_checkEnter"></input>
+
+    <div class="bottom-toolbar" hidden$="[[!playerData]]">
+      <player-display class="player-display" data="[[playerData]]"></player-display>
+      <system-menu
+        class="system-menu"
+        on-toggle-quests="_toggleQuests"
+        on-toggle-effects="_toggleEffects"
+      ></system-menu>
+    </div>
+
+    <target-display id="targets" targets="[[playerData.targets]]" hidden$="[[!playerData]]"></target-display>
+
+    <effect-display
+      id="effects"
+      hidden$="[[!_effectsVisible(playerData, _effectsOpen)]]"
+      effects="[[playerData.effects]]"
+      on-show-effects="_effectsCommand"
+    ></effect-display>
+
+    <quest-display
+      id="quests"
+      hidden$="[[!_questsVisible(playerData, _questsOpen)]]"
+      quests="[[playerData.quests]]"
+      on-show-quests="_questsCommand"
+    ></quest-display>
+
+    <options-menu
+      id="optionsMenu"
+      options="{{options}}"
+      hidden$="[[!_optionsOpen]]"
+      on-save="_optionsSaved"
+      on-close="_closeOptions"
+    ></options-menu>
+  </template>
+
+  <script>
+    /**
+     * @customElement
+     * @polymer
+     */
+    class NeuroApp extends Polymer.GestureEventListeners(Polymer.Element) {
+      static get is() { return 'neuro-app'; }
+      static get properties() {
+        return {
+          hostname: {
+            type: String,
+            value: 'localhost'
+          },
+
+          port: {
+            type: Number,
+            value: 4001,
+          },
+
+          input: {
+            type: String,
+            value: ''
+          },
+
+          playerData: {
+            type: Object,
+            value: null,
+          },
+
+          options: {
+            type: Object,
+            notify: true,
+            value: function () {
+              return {
+                fontSize: 14,
+                selectLastCommand: false,
+              };
+            },
+          },
+
+          _optionsOpen: {
+            type: Boolean,
+            value: false,
+          },
+
+          _effectsOpen: {
+            type: Boolean,
+            value: true,
+          },
+
+          _questsOpen: {
+            type: Boolean,
+            value: true,
+          },
+
+          _isConnected: {
+            type: Boolean,
+            value: false,
+          },
+        };
+      }
+
+      ready() {
+        super.ready();
+        this.ansi_up = new AnsiUp;
+        this.ansi_up.use_classes = true;
+        this._history = [];
+        this._historyIndex = 0;
+        if (typeof require === 'function') {
+          var Store = require('electron-store');
+          this.store = new Store;
+          this.options = this.store.get('options', {
+            fontSize: 14,
+            selectLastCommand: false,
+          });
+        }
+      }
+
+      connect() {
+        if (!this.hostname || !this.port) {
+          return alert('Invalid hostname or port');
+        }
+
+        this.websocket = new WebSocket(`ws://${this.hostname}:${this.port}`);
+        this.websocket.onopen = this._wsOnOpen.bind(this);
+        this.websocket.onclose = this._wsOnClose.bind(this);
+        this.websocket.onmessage = this._wsOnMessage.bind(this);
+        this.websocket.onerror = this._wsOnError.bind(this);
+
+        this.$.input.focus();
+      }
+
+      disconnect() {
+        this.websocket.close();
+      }
+
+      writeOutput(message, elClass = '', raw = false) {
+        var span = document.createElement('span');
+        message = raw ? message : this.ansi_up.ansi_to_html(message);
+        // find links
+        message = message.replace(
+          /[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g,
+          '<a href="http://$&" target="_blank" tabindex="-1">$&</a>'
+        );
+        span.innerHTML = message;
+
+        span.classList.add('output-message');
+        if (elClass) {
+          span.classList.add(elClass);
+        }
+
+        this.$.output.appendChild(span);
+        this.$.output.scrollTop = this.$.output.scrollHeight;
+      }
+
+      _wsOnMessage(e) {
+        var data = JSON.parse(e.data);
+        if (data.type === 'message') {
+          this.writeOutput(data.message);
+        } else if (data.type === 'data') {
+          if (!this.playerData) {
+            this.playerData = {};
+          }
+          this.set('playerData.' + data.group, data.data);
+        }
+      }
+
+      _wsOnOpen(e) {
+        this._isConnected = true;
+        this.writeOutput('Connected', 'info', true);
+      }
+
+      _wsOnClose(e) {
+        this.writeOutput('Connection Closed', 'info', true);
+        this.playerData = null;
+        this._isConnected = false;
+      }
+
+      _wsOnError(e) {
+        console.log(e);
+        this.writeOutput('Websocket Error', 'error', true);
+        this._isConnected = false;
+      }
+
+      _checkEnter(e) {
+        if (e.key === 'Enter') {
+          const message = this.input.trim();
+          if (!message.length) {
+            return;
+          }
+
+          if (
+            typeof require === 'function' &&
+            (message === 'quit' || message === 'exit') &&
+            (!this.websocket || this.websocket.readyState === 3)
+          ) {
+            require('electron').remote.getCurrentWindow().close();
+          }
+
+          this.websocket.send(message);
+          this._history.push(message);
+          if (this.options.selectLastCommand) {
+            this.$.input.select();
+          } else {
+            this.input = '';
+          }
+          this._historyIndex = this._history.length;
+          return;
+        }
+
+        if (e.key === 'ArrowUp') {
+          if (this._history[this._historyIndex - 1]) {
+            this.input = this._history[--this._historyIndex];
+          }
+        }
+
+        if (e.key === 'ArrowDown') {
+          if (this._history[this._historyIndex + 1]) {
+            this.input = this._history[++this._historyIndex];
+          } else {
+            this._historyIndex = this._history.length;
+            this.input = '';
+          }
+        }
+      }
+
+      _effectsVisible() {
+        return this.playerData && this._effectsOpen;
+      }
+
+      _effectsCommand() {
+        if (!this.websocket || this.websocket.readyState !== 1) {
+          return;
+        }
+
+        this.websocket.send('effects');
+      }
+
+      _questsVisible() {
+        return this.playerData && this._questsOpen;
+      }
+
+      _questsCommand() {
+        if (!this.websocket || this.websocket.readyState !== 1) {
+          return;
+        }
+
+        this.websocket.send('quest log');
+      }
+
+      _openOptions() {
+        this._optionsOpen = true;
+      }
+
+      _closeOptions() {
+        this._optionsOpen = false;
+      }
+
+      _optionsSaved() {
+        this._optionsOpen = false;
+        var fontSize = parseInt(this.options.fontSize, 10);
+        this.$.output.style.fontSize = (isNaN(fontSize) ? 14 : fontSize) + 'px';
+
+        if (this.store) {
+          this.store.set('options', this.options);
+        }
+      }
+
+      _toggleEffects() {
+        this._effectsOpen = !this._effectsOpen;
+      }
+
+      _toggleQuests() {
+        this._questsOpen = !this._questsOpen;
+      }
+    }
+
+    window.customElements.define(NeuroApp.is, NeuroApp);
+  </script>
+</dom-module>
