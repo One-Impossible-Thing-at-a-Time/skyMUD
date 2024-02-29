@@ -4,3 +4,6 @@
 [submodule "bundles/lootable-npcs"]
 	path = bundles/lootable-npcs
 	url = https://github.com/RanvierMUD/lootable-npcs
+[submodule "bundles/bundle-example-bugreport"]
+	path = bundles/bundle-example-bugreport
+	url = https://github.com/RanvierMUD/bundle-example-bugreport
