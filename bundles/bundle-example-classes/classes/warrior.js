@@ -9,7 +9,7 @@
  */
 module.exports = {
   name: "skeeter",
-  description: "Skeeters are the everyday Warries of bluesky.",
+  description: "I dunno!",
 
   abilityTable: {
     3: { skills: ["rend"] },

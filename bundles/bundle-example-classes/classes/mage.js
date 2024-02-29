@@ -5,7 +5,7 @@
  */
 module.exports = {
   name: "shitposter",
-  description: "Shitposters are the Mages of bluesky.",
+  description: "I wanna be spicy!",
   abilityTable: {
     5: { spells: ["fireball"] },
   },
