@@ -1,3 +1,6 @@
 [submodule "bundles/simple-waypoints"]
 	path = bundles/simple-waypoints
 	url = https://github.com/RanvierMUD/simple-waypoints
+[submodule "bundles/lootable-npcs"]
+	path = bundles/lootable-npcs
+	url = https://github.com/RanvierMUD/lootable-npcs
